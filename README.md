@@ -51,9 +51,102 @@ Die Ausgabe ist die Wahrscheinlichkeit, dass das Teil i.O. ist (Sigmoid-Funktion
 5. Biases (falls eingeschaltet): Δb = η · δ
 6. Dasselbe Teil neu vorwärts rechnen: Fehler vorher → nachher
 
-Die Änderungen erscheinen direkt an den Verbindungen (▲ größer / ▼ kleiner), die Rechnung mit den echten Zahlen steht im Erklärfeld. Mit „Phasen einzeln“ wartet jede Phase auf ←.
+Die Änderungen erscheinen direkt an den Verbindungen (▲ größer / ▼ kleiner), die Rechnung mit den echten Zahlen steht im Erklärfeld. Mit „Phasen einzeln“ wartet jede Phase auf ←. Woher die Formeln kommen, steht unten unter [Herleitung der Fehlerrückführung](#herleitung-der-fehlerrückführung).
 
 **Einstellungen:** Anzahl versteckter Neuronen, Bias, Aktivierungsfunktion (Leaky-ReLU oder tanh), Lernrate η, Epochen, Tempo, abnehmende Lernrate. Netze lassen sich als JSON speichern und wieder laden.
+
+## Herleitung der Fehlerrückführung
+
+### Bezeichnungen
+
+| Zeichen | Bedeutung |
+|---|---|
+| $x_j$ | Eingabewerte (normierte Temperatur und normierter Druck) |
+| $w_{ij}$ | Gewicht von Eingabe $j$ zum versteckten Neuron $i$ |
+| $z_i,\ h_i = f(z_i)$ | Summe und Ausgabe des versteckten Neurons $i$ ($f$ = Aktivierungsfunktion, ohne Aktivierung gilt $h_i = z_i$) |
+| $v_i$ | Gewicht vom versteckten Neuron $i$ zum Ausgang (im Programm als w(h*i*→y) angezeigt) |
+| $z,\ y = \sigma(z)$ | Summe und Ausgabe des Ausgabeneurons |
+| $t$ | Soll-Wert aus der Qualitätsprüfung: 1 = i.O., 0 = n.i.O. |
+| $\eta$ | Lernrate |
+
+Vorwärtsrechnung:
+
+$$z_i = \sum_j w_{ij}\,x_j + b_i \qquad h_i = f(z_i) \qquad z = \sum_i v_i\,h_i + b \qquad y = \sigma(z) = \frac{1}{1 + e^{-z}}$$
+
+### Fehlerfunktion: der quadratische Fehler
+
+Gelernt wird nach jedem einzelnen Teil. Gemessen wird der Fehler dabei mit dem **quadratischen Fehler** dieses einen Teils:
+
+$$L = (t - y)^2$$
+
+Ziel: alle Gewichte so verändern, dass $L$ kleiner wird. Dafür braucht man die Ableitung von $L$ nach jedem Gewicht (Gradientenabstieg):
+
+$$w_\text{neu} = w - \eta \cdot \frac{\partial L}{\partial w}$$
+
+### Schritt 1: Fehlersignal am Ausgang
+
+Ableitung des quadratischen Fehlers nach der Ausgabe $y$ (Kettenregel, die innere Ableitung von $t - y$ ist $-1$):
+
+$$\frac{\partial L}{\partial y} = 2(t - y)\cdot(-1) = -2(t - y)$$
+
+Ableitung der Sigmoid-Funktion:
+
+$$\frac{\partial y}{\partial z} = \sigma(z)\,\bigl(1 - \sigma(z)\bigr) = y\,(1 - y)$$
+
+Zusammengesetzt mit der Kettenregel:
+
+$$\frac{\partial L}{\partial z} = \frac{\partial L}{\partial y}\cdot\frac{\partial y}{\partial z} = -2(t - y)\cdot y\,(1 - y)$$
+
+Das **Fehlersignal** $\delta$ ist im Programm als *negativer* Gradient definiert – also die Richtung, in die sich $z$ ändern soll, damit der Fehler kleiner wird:
+
+$$\boxed{\delta = -\frac{\partial L}{\partial z} = 2\,(t - y)\cdot y\,(1 - y)}$$
+
+Die **2** kommt also direkt aus der Ableitung des Quadrats.
+
+### Schritt 2: Gewichte zum Ausgang
+
+Wegen $z = \sum_i v_i\,h_i + b$ gilt $\dfrac{\partial z}{\partial v_i} = h_i$, also:
+
+$$\frac{\partial L}{\partial v_i} = \frac{\partial L}{\partial z}\cdot h_i = -\delta \cdot h_i$$
+
+Eingesetzt in den Gradientenabstieg wird aus dem Minus ein Plus:
+
+$$\boxed{v_i^\text{neu} = v_i + \eta\cdot\delta\cdot h_i} \qquad \text{also} \qquad \Delta v_i = \eta\cdot\delta\cdot h_i$$
+
+### Schritt 3: Fehlersignal der versteckten Neuronen
+
+Das versteckte Neuron $i$ beeinflusst den Fehler über $h_i$ und das Gewicht $v_i$:
+
+$$\frac{\partial L}{\partial z_i} = \frac{\partial L}{\partial z}\cdot\frac{\partial z}{\partial h_i}\cdot\frac{\partial h_i}{\partial z_i} = -\delta\cdot v_i\cdot f'(z_i)$$
+
+$$\boxed{\delta_i = \delta\cdot v_i\cdot f'(z_i)}$$
+
+Wichtig: Hier wird das **alte** Gewicht $v_i$ verwendet – also der Wert, mit dem die Vorwärtsrechnung gemacht wurde, nicht der schon angepasste. Ohne Aktivierungsfunktion ist $f'(z_i) = 1$. Die Ableitungen der Aktivierungsfunktionen:
+
+| Funktion | $f(z)$ | $f'(z)$ |
+|---|---|---|
+| Leaky-ReLU | $z$ für $z > 0$, sonst $0{,}1\,z$ | $1$ für $z > 0$, sonst $0{,}1$ |
+| tanh | $\tanh(z)$ | $1 - \tanh^2(z)$ |
+
+### Schritt 4: Gewichte von der Eingabe
+
+Genau wie in Schritt 2, mit $\dfrac{\partial z_i}{\partial w_{ij}} = x_j$:
+
+$$\boxed{\Delta w_{ij} = \eta\cdot\delta_i\cdot x_j}$$
+
+Ist ein Eingabewert $x_j$ nahe 0, ändert sich sein Gewicht kaum.
+
+### Schritt 5: Biases
+
+Ein Bias verhält sich wie ein Gewicht, dessen Eingang immer 1 ist:
+
+$$\Delta b = \eta\cdot\delta \qquad \Delta b_i = \eta\cdot\delta_i$$
+
+### Anmerkungen
+
+- **Quadratischer Fehler, nicht MSE:** Der *mittlere* quadratische Fehler (MSE) über $N$ Teile wäre $\frac{1}{N}\sum (t - y)^2$, seine Ableitung hätte den Faktor $\frac{2}{N}$. Weil das Programm nach jedem einzelnen Teil lernt (stochastischer Gradientenabstieg), wird hier der quadratische Fehler eines Teils verwendet.
+- **Variante mit ½:** In vielen Lehrbüchern steht $L = \frac{1}{2}(t - y)^2$. Dann kürzt sich die 2 weg, und es bleibt $\delta = (t - y)\,y\,(1 - y)$. Inhaltlich ändert das nichts – der Faktor 2 wirkt nur wie eine doppelt so große Lernrate.
+- **Kreuzentropie als Alternative:** Für Klassifikation nimmt man in der Praxis meist die Kreuzentropie $L = -\bigl[t\ln y + (1 - t)\ln(1 - y)\bigr]$. Dort kürzt sich die Sigmoid-Ableitung heraus, und es bleibt $\delta = t - y$. Vorteil: Das Netz lernt auch dann zügig, wenn es sehr sicher falsch liegt ($y$ nahe 0 oder 1). Beim quadratischen Fehler wird $y(1 - y)$ dort sehr klein und das Lernen stockt. Für die Einführung ist der quadratische Fehler anschaulicher.
 
 ## Ideen für den Unterricht
 
