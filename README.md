@@ -4,7 +4,7 @@ Ein kleines neuronales Netz zum Zuschauen und Ausprobieren: Es lernt, Gutteile (
 
 Erstellt für den Unterricht an der Jakob-Preh-Schule ([bsnes.de](https://www.bsnes.de)).
 
-**Live-Version:** `https://<benutzername>.github.io/<repository>/`
+**Live-Version:** `https://flowthetensor.github.io/PW9-NN-in-p5/`
 
 ---
 
