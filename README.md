@@ -29,15 +29,17 @@ Die Ausgabe ist die Wahrscheinlichkeit, dass das Teil i.O. ist (Sigmoid-Funktion
 
 ## Weitere Beispiele (Auswahlliste über dem Diagramm)
 
-Neben der Spritzgießmaschine gibt es Beispiele aus der Elektronik und Mechatronik, angelehnt an die Stationen einer Industrie-4.0-Modellanlage. Alle Daten sind simuliert. Jedes Beispiel hat 110 Messungen, darunter wenige Grenzfälle.
+Die Spritzgießmaschine oben ist nur eines von fünf Beispielen. Die anderen stammen aus der Elektronik und Mechatronik und sind an die Stationen einer Industrie-4.0-Modellanlage angelehnt. Beim Start ist der **Förderband-Antrieb** ausgewählt. Alle Daten sind simuliert. Jedes Beispiel hat 110 Messungen, darunter wenige Grenzfälle.
 
 | Beispiel | Merkmal 1 | Merkmal 2 | n.i.O., wenn … | Form des Gut-Bereichs |
 |---|---|---|---|---|
+| **Förderband-Antrieb** · Zustandsüberwachung *(Standard)* | Motorstrom 0 … 1,6 A | Schwingstärke am Motorlager 0 … 10 mm/s | Strom < 0,2 A (Kontakt/Sicherung), Strom > 1,05 A (Überlast/blockiert), Schwingung > 4,5 mm/s (Lagerschaden) | Rechteck, nach unten offen (3 Seiten) |
 | **Spritzgießmaschine** · Qualitätsprüfung | Werkzeugtemperatur 180 … 260 °C | Einspritzdruck 600 … 1400 bar | zu kalt (< 205 °C), zu heiß (> 242 °C), zu wenig Druck (< 880 bar) | Rechteck, nach oben offen (3 Seiten) |
-| **Förderband-Antrieb** · Zustandsüberwachung | Motorstrom 0 … 1,6 A | Schwingstärke am Motorlager 0 … 10 mm/s | Strom < 0,2 A (Kontakt/Sicherung), Strom > 1,05 A (Überlast/blockiert), Schwingung > 4,5 mm/s (Lagerschaden) | Rechteck, nach unten offen (3 Seiten) |
-| **Pneumatikzylinder** · Fehlerdiagnose | Ausfahrzeit 150 … 650 ms | Luftverbrauch je Hub 0,05 … 0,55 Nl | zu schnell (< 240 ms), zu langsam (> 420 ms), Leckage (> 0,34 Nl), Hub unvollständig (< 0,16 Nl) | geschlossenes Rechteck (4 Seiten) |
+| **Pneumatikzylinder** · Fehlerdiagnose | Ausfahrzeit 150 … 650 ms | Luftverbrauch je Hub 0,05 … 0,55 Nl ¹ | zu schnell (< 240 ms), zu langsam (> 420 ms), Leckage (> 0,34 Nl), Hub unvollständig (< 0,16 Nl) | geschlossenes Rechteck (4 Seiten) |
 | **Reflow-Lötofen** · Lötstellenprüfung | Spitzentemperatur 220 … 270 °C | Zeit über Liquidus (217 °C) 20 … 120 s | kalte Lötstelle (< 235 °C), schlechte Benetzung (< 40 s), spröde (> 100 s), zu viel Wärme ((T − 217 °C) · t > 2100 °C·s) | 3 gerade Seiten und eine gebogene |
 | **Handhabung** · Ablagegenauigkeit Greifer | Ablageabweichung Δx −1,5 … +1,5 mm | Ablageabweichung Δy −1,5 … +1,5 mm | Abstand zur Sollposition > 0,8 mm | Kreis |
+
+¹ Nl = Normliter: das Luftvolumen, umgerechnet auf einen festgelegten Normzustand (DIN 1343: 0 °C und 1,01325 bar). So lassen sich Luftverbräuche vergleichen, egal mit welchem Druck die Anlage arbeitet.
 
 **Ideen für den Unterricht**
 
@@ -45,7 +47,7 @@ Neben der Spritzgießmaschine gibt es Beispiele aus der Elektronik und Mechatron
 - Ohne Aktivierungsfunktion kann das Netz nur eine gerade Grenze ziehen. Bei keinem der Beispiele reicht das.
 - Die Entscheidungskarte zeigt, welchen Bereich das Netz gelernt hat. Ein Vergleich mit der Tabelle oben zeigt, wo das Netz noch danebenliegt.
 
-Ein Beispiel lässt sich auch direkt über die Adresse öffnen, z. B. `index.html?szenario=greifer` (`spritzguss`, `foerderband`, `pneumatik`, `reflow`, `greifer`). Beim Speichern merkt sich das Netz das Beispiel, beim Laden wird es wieder ausgewählt. Neue Beispiele lassen sich in [daten.js](daten.js) als weiterer Eintrag in `SZENARIEN` ergänzen.
+Ein Beispiel lässt sich auch direkt über die Adresse öffnen, z. B. `index.html?szenario=greifer` (`foerderband`, `spritzguss`, `pneumatik`, `reflow`, `greifer`). Beim Speichern merkt sich das Netz das Beispiel, beim Laden wird es wieder ausgewählt. Neue Beispiele lassen sich in [daten.js](daten.js) als weiterer Eintrag in `SZENARIEN` ergänzen.
 
 ## Bedienung
 

@@ -37,6 +37,38 @@ function wortformen(einzahl, mehrzahl, weiblich) {
 
 const SZENARIEN = {
   // ---------------------------------------------------------------------------
+  foerderband: {
+    name: "Förderband-Antrieb · Zustandsüberwachung",
+    untertitel: "Zustandsüberwachung · Neuronales Netz",
+    wort: wortformen("Messung", "Messungen", true),
+    soll: "Befund Instandhaltung (Soll)",
+    merkmale: [
+      { name: "Strom", achse: "Motorstrom in A", einheit: "A", min: 0, max: 1.6, raster: 0.01, stellen: 2, gitter: 0.4 },
+      { name: "Schwingung", achse: "Schwingstärke am Motorlager in mm/s", einheit: "mm/s", min: 0, max: 10, raster: 0.1, stellen: 1, gitter: 2 },
+    ],
+    pruefe(i, v) {
+      if (i < 0.2) {
+        return { label: 0, fehler: "Strom zu klein – Kontakt, Leitung oder Sicherung prüfen" };
+      }
+      if (i > 1.05) {
+        return { label: 0, fehler: "Überlast – Band schwergängig oder blockiert" };
+      }
+      if (v > 4.5) {
+        return { label: 0, fehler: "Schwingung zu hoch – Lagerschaden (Wartung nötig)" };
+      }
+      return { label: 1, fehler: "" };
+    },
+    knapp: (i, v) => Math.abs(i - 0.2) <= 0.03 || Math.abs(i - 1.05) <= 0.04 || Math.abs(v - 4.5) <= 0.3,
+    grenzfall: "Grenzfall – vom Instandhalter als auffällig eingestuft",
+    arbeitsbereich: [[0.25, 1.0], [0.5, 4.0]],
+    streubereich: [[0.03, 1.57], [0.2, 9.8]],
+    startwert: 20260311,
+    ersteId: 1201,
+    form: "der Gut-Bereich hat aber drei Seiten",
+    gelernt: "welchen Gut-Bereich das Netz gelernt hat",
+  },
+
+  // ---------------------------------------------------------------------------
   spritzguss: {
     name: "Spritzgießmaschine · Qualitätsprüfung",
     untertitel: "Spritzguss · Neuronales Netz",
@@ -70,38 +102,6 @@ const SZENARIEN = {
   },
 
   // ---------------------------------------------------------------------------
-  foerderband: {
-    name: "Förderband-Antrieb · Zustandsüberwachung",
-    untertitel: "Zustandsüberwachung · Neuronales Netz",
-    wort: wortformen("Messung", "Messungen", true),
-    soll: "Befund Instandhaltung (Soll)",
-    merkmale: [
-      { name: "Strom", achse: "Motorstrom in A", einheit: "A", min: 0, max: 1.6, raster: 0.01, stellen: 2, gitter: 0.4 },
-      { name: "Schwingung", achse: "Schwingstärke am Motorlager in mm/s", einheit: "mm/s", min: 0, max: 10, raster: 0.1, stellen: 1, gitter: 2 },
-    ],
-    pruefe(i, v) {
-      if (i < 0.2) {
-        return { label: 0, fehler: "Strom zu klein – Kontakt, Leitung oder Sicherung prüfen" };
-      }
-      if (i > 1.05) {
-        return { label: 0, fehler: "Überlast – Band schwergängig oder blockiert" };
-      }
-      if (v > 4.5) {
-        return { label: 0, fehler: "Schwingung zu hoch – Lagerschaden (Wartung nötig)" };
-      }
-      return { label: 1, fehler: "" };
-    },
-    knapp: (i, v) => Math.abs(i - 0.2) <= 0.03 || Math.abs(i - 1.05) <= 0.04 || Math.abs(v - 4.5) <= 0.3,
-    grenzfall: "Grenzfall – vom Instandhalter als auffällig eingestuft",
-    arbeitsbereich: [[0.25, 1.0], [0.5, 4.0]],
-    streubereich: [[0.03, 1.57], [0.2, 9.8]],
-    startwert: 20260311,
-    ersteId: 1201,
-    form: "der Gut-Bereich hat aber drei Seiten",
-    gelernt: "welchen Gut-Bereich das Netz gelernt hat",
-  },
-
-  // ---------------------------------------------------------------------------
   pneumatik: {
     name: "Pneumatikzylinder · Fehlerdiagnose",
     untertitel: "Pneumatik · Neuronales Netz",
@@ -109,7 +109,7 @@ const SZENARIEN = {
     soll: "Diagnose (Soll)",
     merkmale: [
       { name: "Ausfahrzeit", achse: "Ausfahrzeit in ms", einheit: "ms", min: 150, max: 650, raster: 1, stellen: 0, gitter: 100 },
-      { name: "Luft", achse: "Luftverbrauch je Hub in Nl", einheit: "Nl", min: 0.05, max: 0.55, raster: 0.01, stellen: 2, gitter: 0.1 },
+      { name: "Luft", achse: "Luftverbrauch je Hub in Nl (Normliter)", einheit: "Nl", min: 0.05, max: 0.55, raster: 0.01, stellen: 2, gitter: 0.1 },
     ],
     pruefe(t, v) {
       if (t < 240) {
@@ -203,7 +203,7 @@ const SZENARIEN = {
 };
 
 // aktuell gewähltes Szenario
-let szenarioName = "spritzguss";
+let szenarioName = "foerderband";
 let SZ = SZENARIEN[szenarioName];
 
 function waehleSzenario(name) {
