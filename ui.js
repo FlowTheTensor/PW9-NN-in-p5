@@ -69,6 +69,17 @@ function erstelleUi() {
   ui.datei.hide();
 
   // --- Prozessdaten ----------------------------------------------------------
+  // Auswahl des Beispiels – steht als Überschrift über dem Diagramm
+  ui.szenario = platziere(createSelect(), 36, 88, 380, "szenario");
+  for (const name in SZENARIEN) {
+    ui.szenario.option(SZENARIEN[name].name, name);
+  }
+  ui.szenario.selected(szenarioName);
+  ui.szenario.changed(() => {
+    szenarioWechseln(ui.szenario.value());
+    ui.szenario.elt.blur();
+  });
+
   ui.aufteilen = platziere(createButton("Daten neu aufteilen"), 40, 620, 230);
   ui.aufteilen.mousePressed(() => {
     datenAufteilen();
@@ -245,10 +256,10 @@ function aktualisiereUi() {
     beschrifte(ui.vor, "Überspringen ▶▶ (→)");
     beschrifte(ui.zurueck, "◀ Nächste Phase (←)");
   } else if (phase === "fertig") {
-    beschrifte(ui.vor, "Nächstes Teil ▶ (→)");
+    beschrifte(ui.vor, SZ.wort.naechst + " ▶ (→)");
     beschrifte(ui.zurueck, "◀ Nochmal zurück (←)");
   } else if (phase === "bereit" || phase === "ausgabe") {
-    beschrifte(ui.vor, "Nächstes Teil ▶ (→)");
+    beschrifte(ui.vor, SZ.wort.naechst + " ▶ (→)");
     beschrifte(ui.zurueck, "◀ Fehlerrückführung (←)");
   } else {
     beschrifte(ui.vor, "Vorwärts ▶ (→)");
@@ -259,7 +270,7 @@ function aktualisiereUi() {
 
   beschrifte(ui.karte, karteAn ? "Entscheidungskarte ausblenden" : "Entscheidungskarte einblenden");
 
-  for (const el of [ui.anzahl, ui.zufall, ui.tutorial, ui.laden, ui.aufteilen, ui.modusErkunden, ui.modusTraining]) {
+  for (const el of [ui.szenario, ui.anzahl, ui.zufall, ui.tutorial, ui.laden, ui.aufteilen, ui.modusErkunden, ui.modusTraining]) {
     sperre(el, beschaeftigt);
   }
 }

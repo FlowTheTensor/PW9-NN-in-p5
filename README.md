@@ -27,6 +27,26 @@ Das Netz:
 
 Die Ausgabe ist die Wahrscheinlichkeit, dass das Teil i.O. ist (Sigmoid-Funktion, Schwelle 0,5).
 
+## Weitere Beispiele (Auswahlliste über dem Diagramm)
+
+Neben der Spritzgießmaschine gibt es Beispiele aus der Elektronik und Mechatronik, angelehnt an die Stationen einer Industrie-4.0-Modellanlage. Alle Daten sind simuliert. Jedes Beispiel hat 110 Messungen, darunter wenige Grenzfälle.
+
+| Beispiel | Merkmal 1 | Merkmal 2 | n.i.O., wenn … | Form des Gut-Bereichs |
+|---|---|---|---|---|
+| **Spritzgießmaschine** · Qualitätsprüfung | Werkzeugtemperatur 180 … 260 °C | Einspritzdruck 600 … 1400 bar | zu kalt (< 205 °C), zu heiß (> 242 °C), zu wenig Druck (< 880 bar) | Rechteck, nach oben offen (3 Seiten) |
+| **Förderband-Antrieb** · Zustandsüberwachung | Motorstrom 0 … 1,6 A | Schwingstärke am Motorlager 0 … 10 mm/s | Strom < 0,2 A (Kontakt/Sicherung), Strom > 1,05 A (Überlast/blockiert), Schwingung > 4,5 mm/s (Lagerschaden) | Rechteck, nach unten offen (3 Seiten) |
+| **Pneumatikzylinder** · Fehlerdiagnose | Ausfahrzeit 150 … 650 ms | Luftverbrauch je Hub 0,05 … 0,55 Nl | zu schnell (< 240 ms), zu langsam (> 420 ms), Leckage (> 0,34 Nl), Hub unvollständig (< 0,16 Nl) | geschlossenes Rechteck (4 Seiten) |
+| **Reflow-Lötofen** · Lötstellenprüfung | Spitzentemperatur 220 … 270 °C | Zeit über Liquidus (217 °C) 20 … 120 s | kalte Lötstelle (< 235 °C), schlechte Benetzung (< 40 s), spröde (> 100 s), zu viel Wärme ((T − 217 °C) · t > 2100 °C·s) | 3 gerade Seiten und eine gebogene |
+| **Handhabung** · Ablagegenauigkeit Greifer | Ablageabweichung Δx −1,5 … +1,5 mm | Ablageabweichung Δy −1,5 … +1,5 mm | Abstand zur Sollposition > 0,8 mm | Kreis |
+
+**Ideen für den Unterricht**
+
+- Je mehr Seiten der Gut-Bereich hat, desto mehr versteckte Neuronen braucht das Netz. Mit ReLU zieht jedes versteckte Neuron ungefähr eine gerade Kante. Wie viele Neuronen braucht der Kreis beim Greifer mindestens?
+- Ohne Aktivierungsfunktion kann das Netz nur eine gerade Grenze ziehen. Bei keinem der Beispiele reicht das.
+- Die Entscheidungskarte zeigt, welchen Bereich das Netz gelernt hat. Ein Vergleich mit der Tabelle oben zeigt, wo das Netz noch danebenliegt.
+
+Ein Beispiel lässt sich auch direkt über die Adresse öffnen, z. B. `index.html?szenario=greifer` (`spritzguss`, `foerderband`, `pneumatik`, `reflow`, `greifer`). Beim Speichern merkt sich das Netz das Beispiel, beim Laden wird es wieder ausgewählt. Neue Beispiele lassen sich in [daten.js](daten.js) als weiterer Eintrag in `SZENARIEN` ergänzen.
+
 ## Bedienung
 
 | Aktion | Wirkung |

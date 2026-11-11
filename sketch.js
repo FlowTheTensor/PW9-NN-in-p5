@@ -1,11 +1,12 @@
 // =============================================================================
-//  KI-Qualitätsprüfung · Spritzguss
-//  Ein kleines neuronales Netz lernt, Gutteile (i.O.) von Ausschuss (n.i.O.)
-//  zu unterscheiden – nur anhand von Werkzeugtemperatur und Einspritzdruck.
+//  KI-Qualitätsprüfung
+//  Ein kleines neuronales Netz lernt, i.O. von n.i.O. zu unterscheiden – nur
+//  anhand von zwei Messwerten. Mehrere Beispiele (Spritzguss, Förderband,
+//  Pneumatik, Reflow-Löten, Greifer) sind über die Auswahlliste wählbar.
 // =============================================================================
 //
 //  Dateien
-//    daten.js   Prozessdaten (Beispielteile) und Normierung
+//    daten.js   Beispieldaten (Szenarien) und Normierung
 //    netz.js    das neuronale Netz (Vorwärtsrechnung, Fehlerrückführung)
 //    ui.js      Knöpfe, Auswahllisten, Regler
 //    sketch.js  Ablauf, Zeichnen, Erklärungen (diese Datei)
@@ -13,7 +14,7 @@
 //  Bedienung
 //    →  nächster Schritt der Vorwärtsrechnung
 //    ←  Fehlerrückführung Phase für Phase (nur im Trainingsmodus)
-//    Klick in das Diagramm: eigenes Teil mit diesen Prozesswerten prüfen
+//    Klick in das Diagramm: eigene Messung mit diesen Werten prüfen
 //
 //  Läuft mit p5.js 1.x und 2.x.
 //  Hinweis: Alle Schleifen haben geschweifte Klammern – der p5-Web-Editor
@@ -61,7 +62,7 @@ function ladeSchriften() {
   }
 }
 
-const P_DATEN = { x: 24, y: 84, w: 560, h: 576, titel: "Prozessdaten · Spritzgießmaschine 3" };
+const P_DATEN = { x: 24, y: 84, w: 560, h: 576, titel: "" }; // Titel = Szenario-Auswahl (ui.js)
 const P_KURVE = { x: 24, y: 676, w: 560, h: 208, titel: "Lernkurve · Fehlerquote je Epoche" };
 const P_NETZ = { x: 600, y: 84, w: 976, h: 576, titel: "Neuronales Netz" };
 const P_ERKL = { x: 600, y: 676, w: 600, h: 208, titel: "" };
@@ -165,6 +166,8 @@ function setup() {
   karteBild.loadPixels();
 
   netz = new NeuronalesNetz(4);
+  // Beispiel direkt über die Adresse wählbar, z. B. index.html?szenario=greifer
+  waehleSzenario(new URLSearchParams(window.location.search).get("szenario"));
   datensatz = erzeugeDatensatz();
   datenAufteilen();
 
@@ -266,6 +269,20 @@ function datenAufteilen() {
   manIdx = 0;
   kurve = [];
   gesamtEpochen = 0;
+}
+
+// anderes Beispiel gewählt: neue Daten, die Gewichte des Netzes bleiben
+function szenarioWechseln(name) {
+  if (laufTraining || laufTest || !SZENARIEN[name]) {
+    return;
+  }
+  waehleSzenario(name);
+  datensatz = erzeugeDatensatz();
+  datenAufteilen();
+  netzZurueckgesetzt(true);
+  if (ui.szenario) {
+    ui.szenario.selected(szenarioName);
+  }
 }
 
 function setzeModus(m) {
@@ -775,7 +792,7 @@ function zeichneKopf() {
   textFont(SCHRIFT);
   textSize(13);
   fill(...FARBE.blass);
-  text("Spritzguss · Neuronales Netz", 194, 41);
+  text(SZ.untertitel, 194, 41);
 
   // Statuszeile
   fill(...FARBE.grau);
@@ -786,19 +803,19 @@ function zeichneKopf() {
 
 function statusText() {
   if (laufTest) {
-    return `Test läuft: ${testIdx} von ${testdaten.length} Testteilen geprüft · ${testFalsch} falsch erkannt`;
+    return `Test läuft: ${testIdx} von ${testdaten.length} ${SZ.wort.testDativ} geprüft · ${testFalsch} falsch erkannt`;
   }
   if (modus === "training") {
-    let s = `Trainingsmodus · ${trainingsdaten.length} Trainingsteile · Lernrate η = ${lernrate.toFixed(2)}`;
+    let s = `Trainingsmodus · ${trainingsdaten.length} ${SZ.wort.training} · Lernrate η = ${lernrate.toFixed(2)}`;
     if (laufTraining) {
-      s += ` · Epoche ${laufEpoche + 1} von ${epochenZiel} · Teil ${trainIdx + 1} von ${trainingsdaten.length}`;
+      s += ` · Epoche ${laufEpoche + 1} von ${epochenZiel} · ${SZ.wort.sg} ${trainIdx + 1} von ${trainingsdaten.length}`;
     } else if (gesamtEpochen > 0) {
       s += ` · bisher ${gesamtEpochen} Epochen trainiert`;
     }
     return s;
   }
   const quote = letzteTestquote === null ? "–" : (letzteTestquote * 100).toFixed(1) + " %";
-  return `Erkunden & Testen · ${testdaten.length} Testteile · Fehlerquote im letzten Test: ${quote}`;
+  return `Erkunden & Testen · ${testdaten.length} ${SZ.wort.test} · Fehlerquote im letzten Test: ${quote}`;
 }
 
 // =============================================================================
@@ -866,34 +883,35 @@ function zeichneDatenPanel() {
   // Gitter und Achsen
   textFont(SCHRIFT);
   textSize(12);
-  for (let t = 180; t <= 260; t += 20) {
-    const [gx] = zuPlot(normieren(t, MERKMALE[0]), 0);
+  const [m0, m1] = SZ.merkmale;
+  for (const v of gitterWerte(m0)) {
+    const [gx] = zuPlot(normieren(v, m0), 0);
     stroke(0, 0, 0, 25);
     line(gx, PLOT.y, gx, PLOT.y + PLOT.s);
     noStroke();
     fill(...FARBE.grau);
     textAlign(CENTER, TOP);
-    text(t, gx, PLOT.y + PLOT.s + 6);
+    text(gitterText(v, m0), gx, PLOT.y + PLOT.s + 6);
   }
-  for (let p = 600; p <= 1400; p += 200) {
-    const [, gy] = zuPlot(0, normieren(p, MERKMALE[1]));
+  for (const v of gitterWerte(m1)) {
+    const [, gy] = zuPlot(0, normieren(v, m1));
     stroke(0, 0, 0, 25);
     line(PLOT.x, gy, PLOT.x + PLOT.s, gy);
     noStroke();
     fill(...FARBE.grau);
     textAlign(RIGHT, CENTER);
-    text(p, PLOT.x - 6, gy);
+    text(gitterText(v, m1), PLOT.x - 6, gy);
   }
   fill(...FARBE.text);
   textStyle(BOLD);
   textSize(13);
   textAlign(CENTER, TOP);
-  text("Werkzeugtemperatur in °C", PLOT.x + PLOT.s / 2, PLOT.y + PLOT.s + 24);
+  text(m0.achse, PLOT.x + PLOT.s / 2, PLOT.y + PLOT.s + 24);
   push();
   translate(P_DATEN.x + 18, PLOT.y + PLOT.s / 2);
   rotate(-HALF_PI);
   textAlign(CENTER, TOP);
-  text("Einspritzdruck in bar", 0, 0);
+  text(m1.achse, 0, 0);
   pop();
   textStyle(NORMAL);
 
@@ -923,6 +941,21 @@ function zeichneDatenPanel() {
   } else {
     cursor(ARROW);
   }
+}
+
+// Gitterlinien auf "runden" Werten innerhalb des Wertebereichs
+function gitterWerte(m) {
+  const werte = [];
+  const start = Math.ceil(m.min / m.gitter - 1e-9) * m.gitter;
+  for (let v = start; v <= m.max + 1e-9; v += m.gitter) {
+    werte.push(Number(v.toFixed(6)));
+  }
+  return werte;
+}
+
+function gitterText(v, m) {
+  const stellen = Number.isInteger(m.gitter) ? 0 : Math.min(m.stellen, 1);
+  return v.toFixed(stellen).replace("-", "−");
 }
 
 function zeichneTeilMarke(x, y, label, r, alpha) {
@@ -1309,11 +1342,11 @@ function zeichneNetzPanel() {
     textFont(SCHRIFT);
     textStyle(BOLD);
     textSize(14);
-    text(MERKMALE[j].name, IN_X, IN_Y[j] - R - 26);
+    text(SZ.merkmale[j].name, IN_X, IN_Y[j] - R - 26);
     textStyle(NORMAL);
     textSize(12);
     fill(...FARBE.grau);
-    const roh = zeigeIn && teil ? (j === 0 ? teil.t : teil.p) + " " + MERKMALE[j].einheit : MERKMALE[j].einheit;
+    const roh = zeigeIn && teil ? wertText(teil.roh[j], SZ.merkmale[j]) : SZ.merkmale[j].einheit;
     text(roh, IN_X, IN_Y[j] - R - 10);
   }
 
@@ -1574,7 +1607,7 @@ function zeichnePruefergebnis() {
   if (!teil || !eingabeBekannt()) {
     fill(...FARBE.grau);
     textSize(13);
-    text("Noch kein Teil.\nHol dir mit → ein Teil\noder klicke ins Diagramm.", x + 14, y + 44);
+    text(`Noch ${SZ.wort.kein}.\nHol dir mit → ${SZ.wort.ein}\noder klicke ins Diagramm.`, x + 14, y + 44);
     return;
   }
 
@@ -1601,7 +1634,7 @@ function zeichnePruefergebnis() {
   };
 
   zeile(
-    "Qualitätsprüfung (Soll)",
+    SZ.soll,
     teil.label === 1 ? "i.O.  (t = 1)" : "n.i.O.  (t = 0)",
     teil.label === 1 ? FARBE.io : FARBE.nio,
     teil.label === 1 ? "" : teil.fehler
@@ -1654,7 +1687,7 @@ function erklaerung() {
     return {
       titel: "Automatisches Training läuft",
       text:
-        "Jedes Trainingsteil durchläuft Vorwärtsrechnung und Fehlerrückführung. Leuchtende Verbindungen wurden gerade stark angepasst: blau = Gewicht wird größer, orange = Gewicht wird kleiner. Links unten siehst du die Fehlerquote je Epoche.",
+        `Jede Trainingsmessung durchläuft Vorwärtsrechnung und Fehlerrückführung. Leuchtende Verbindungen wurden gerade stark angepasst: blau = Gewicht wird größer, orange = Gewicht wird kleiner. Links unten siehst du die Fehlerquote je Epoche.`,
       formeln: [],
     };
   }
@@ -1662,7 +1695,7 @@ function erklaerung() {
     return {
       titel: "Test läuft",
       text:
-        "Das Netz bewertet die Testteile, die es beim Training nie gesehen hat. Falsch bewertete Teile werden schwarz umkreist.",
+        `Das Netz bewertet die ${SZ.wort.test}, die es beim Training nie gesehen hat. Falsch bewertete ${SZ.wort.pl} werden schwarz umkreist.`,
       formeln: [`bisher ${testFalsch} von ${testIdx} falsch`],
     };
   }
@@ -1672,7 +1705,7 @@ function erklaerung() {
       const e = {
         titel: "Trainingsmodus",
         text:
-          "Hol dir mit → ein Trainingsteil oder klicke ins Diagramm. Nach der Vorwärtsrechnung zeigt ← die Fehlerrückführung Schritt für Schritt. Oder starte oben das automatische Training.",
+          `Hol dir mit → ${SZ.wort.ein} aus den Trainingsdaten oder klicke ins Diagramm. Nach der Vorwärtsrechnung zeigt ← die Fehlerrückführung Schritt für Schritt. Oder starte oben das automatische Training.`,
         formeln: [],
       };
       if (kurve.length > 1) {
@@ -1681,11 +1714,11 @@ function erklaerung() {
         e.text = `Nach ${gesamtEpochen} Epochen: Fehlerquote ${Math.round(k.train * 100)} % beim Training, ${Math.round(k.test * 100)} % beim Test.`;
         if (k.test > 0.15 && !netz.aktivierungAn) {
           e.text +=
-            " Tipp: Ohne Aktivierungsfunktion kann das Netz nur eine gerade Grenze ziehen – das Prozessfenster hat aber drei Seiten. Schalte Bias und Aktivierung ein.";
+            ` Tipp: Ohne Aktivierungsfunktion kann das Netz nur eine gerade Grenze ziehen – ${SZ.form}. Schalte Bias und Aktivierung ein.`;
         } else if (k.test > 0.15) {
           e.text += " Tipp: Mehr Epochen, eine andere Lernrate oder neue Zufallswerte ausprobieren.";
         } else {
-          e.text += " Blende die Entscheidungskarte ein, um zu sehen, welches Prozessfenster das Netz gelernt hat.";
+          e.text += ` Blende die Entscheidungskarte ein, um zu sehen, ${SZ.gelernt}.`;
         }
       }
       return e;
@@ -1693,7 +1726,7 @@ function erklaerung() {
     return {
       titel: "Erkunden & Testen",
       text:
-        "Hol dir mit → ein Testteil oder klicke ins Diagramm. Das Netz rechnet dann Schicht für Schicht vorwärts. Mit „Test starten“ werden alle Testteile auf einmal geprüft.",
+        `Hol dir mit → ${SZ.wort.ein} aus den Testdaten oder klicke ins Diagramm. Das Netz rechnet dann Schicht für Schicht vorwärts. Mit „Test starten“ werden alle ${SZ.wort.test} auf einmal geprüft.`,
       formeln: [],
     };
   }
@@ -1702,10 +1735,10 @@ function erklaerung() {
     return {
       titel: "1 · Eingabe",
       text:
-        "Die beiden Prozesswerte werden auf den Bereich −1 … +1 umgerechnet (normiert), damit das Netz mit ähnlich großen Zahlen arbeitet. Weiter mit →.",
+        "Die beiden Messwerte werden auf den Bereich −1 … +1 umgerechnet (normiert), damit das Netz mit ähnlich großen Zahlen arbeitet. Weiter mit →.",
       formeln: [
-        `Temperatur ${teil.t} °C  →  ${f2(vw.x[0])}     (180 °C = −1, 260 °C = +1)`,
-        `Druck     ${teil.p} bar  →  ${f2(vw.x[1])}     (600 bar = −1, 1400 bar = +1)`,
+        normFormel(0),
+        normFormel(1),
       ],
     };
   }
@@ -1739,8 +1772,8 @@ function erklaerung() {
     return {
       titel: "3 · Ausgabe und Fehler",
       text:
-        "Das Ausgabeneuron summiert die gewichteten Werte und drückt das Ergebnis mit der Sigmoid-Funktion zwischen 0 und 1: die Wahrscheinlichkeit, dass das Teil i.O. ist. " +
-        (modus === "training" ? "Jetzt die Fehlerrückführung mit ← starten." : "Nächstes Teil mit →."),
+        `Das Ausgabeneuron summiert die gewichteten Werte und drückt das Ergebnis mit der Sigmoid-Funktion zwischen 0 und 1: die Wahrscheinlichkeit, dass ${SZ.wort.das} i.O. ist. ` +
+        (modus === "training" ? "Jetzt die Fehlerrückführung mit ← starten." : `${SZ.wort.naechst} mit →.`),
       formeln: [
         `y = σ(${f2(vw.zAus)}) = ${f2(vw.y)}   →  Entscheidung: ${entscheidung}`,
         `Soll t = ${teil.label}     Fehler t − y = ${f2(teil.label - vw.y)}`,
@@ -1832,7 +1865,7 @@ function erklaerung() {
     if (akt === "neu") {
       return {
         titel: `Fehlerrückführung ${nr} · Neu vorwärts rechnen`,
-        text: "Mit den angepassten Gewichten wird dasselbe Teil noch einmal bewertet.",
+        text: `Mit den angepassten Gewichten wird ${SZ.wort.dasselbe} noch einmal bewertet.`,
         formeln: [
           `Ausgabe y:  ${f2(rf.vorher.y)}  →  ${f2(rf.nachher.y)}`,
           `Fehler:     ${f2(r.t - rf.vorher.y)}  →  ${f2(r.t - rf.nachher.y)}`,
@@ -1848,13 +1881,20 @@ function erklaerung() {
     return {
       titel: "Fehlerrückführung abgeschlossen",
       text: besser
-        ? "Der Fehler für dieses Teil ist kleiner geworden. Mit ← denselben Schritt wiederholen, mit → kommt das nächste Teil."
+        ? `Der Fehler für ${SZ.wort.dies} ist kleiner geworden. Mit ← denselben Schritt wiederholen, mit → kommt ${SZ.wort.naechstKlein}.`
         : "Der Fehler ist nicht kleiner geworden – vielleicht ist die Lernrate zu groß. Probier eine kleinere Lernrate.",
       formeln: [`Fehler vorher ${f3(ev)}  →  nachher ${f3(en)}`],
     };
   }
 
   return { titel: "", text: "", formeln: [] };
+}
+
+// Normierung eines Eingabewerts als Textzeile für das Erklärfeld
+function normFormel(j) {
+  const m = SZ.merkmale[j];
+  const links = (m.name + " " + wertText(teil.roh[j], m)).padEnd(24);
+  return `${links}→  ${f2(vw.x[j])}     (${wertText(m.min, m)} = −1, ${wertText(m.max, m)} = +1)`;
 }
 
 function zeichneErklaerung() {
@@ -1982,18 +2022,9 @@ function mousePressed() {
   }
   const xn = ((mx - PLOT.x) / PLOT.s) * 2 - 1;
   const yn = 1 - ((my - PLOT.y) / PLOT.s) * 2;
-  const t = Math.round(entnormieren(xn, MERKMALE[0]));
-  const p = Math.round(entnormieren(yn, MERKMALE[1]) / 5) * 5;
-  const ergebnis = pruefeBauteil(t, p);
-  teilEingeben({
-    id: null,
-    t,
-    p,
-    x: normieren(t, MERKMALE[0]),
-    y: normieren(p, MERKMALE[1]),
-    label: ergebnis.label,
-    fehler: ergebnis.fehler,
-  });
+  const w0 = runde(entnormieren(xn, SZ.merkmale[0]), SZ.merkmale[0]);
+  const w1 = runde(entnormieren(yn, SZ.merkmale[1]), SZ.merkmale[1]);
+  teilEingeben(erzeugeTeil(null, w0, w1, SZ.pruefe(w0, w1)));
 }
 
 function keyPressed() {
@@ -2025,7 +2056,9 @@ function netzSpeichern() {
   if (name === null) {
     return;
   }
-  const blob = new Blob([JSON.stringify(netz.alsJSON(), null, 1)], { type: "application/json" });
+  const daten = netz.alsJSON();
+  daten.szenario = szenarioName; // damit beim Laden das passende Beispiel gewählt wird
+  const blob = new Blob([JSON.stringify(daten, null, 1)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.download = name;
@@ -2044,7 +2077,11 @@ function dateiGewaehlt(datei) {
   const leser = new FileReader();
   leser.onload = (ev) => {
     try {
-      netz.ausJSON(JSON.parse(ev.target.result));
+      const daten = JSON.parse(ev.target.result);
+      netz.ausJSON(daten);
+      if (daten.szenario && daten.szenario !== szenarioName && SZENARIEN[daten.szenario]) {
+        szenarioWechseln(daten.szenario);
+      }
       netzZurueckgesetzt(true);
     } catch (err) {
       alert("Das Netz konnte nicht geladen werden: " + err.message);

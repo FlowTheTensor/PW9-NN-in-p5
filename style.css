@@ -126,6 +126,21 @@ select.ui {
   cursor: pointer;
 }
 
+/* Beispiel-Auswahl als Überschrift des Datenpanels */
+select.ui.szenario {
+  height: 1.75em;
+  font-family: Quicksand, Arial, Helvetica, sans-serif;
+  font-size: 1.05em;
+  font-weight: 700;
+  border-color: var(--line);
+  background: var(--bg);
+}
+
+select.ui.szenario:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 .ui input[type="checkbox"] {
   width: 1.05em;
   height: 1.05em;
