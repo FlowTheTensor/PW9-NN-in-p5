@@ -25,7 +25,11 @@
 // Layout (logisches Raster 1600 × 900, wird auf die Fenstergröße skaliert)
 // -----------------------------------------------------------------------------
 const W = 1600;
-const H = 900;
+// Kopfzeile (0 … 56) und Beispiel-Leiste (56 … 56 + LEISTE) liegen über dem Inhalt.
+// Der Inhalt wird im Raster 1600 × 900 gezeichnet und um LEISTE nach unten verschoben.
+const LEISTE = 48;
+const H_INHALT = 900;
+const H = H_INHALT + LEISTE;
 let S = 1;
 
 // Schriften der Jakob-Preh-Schule (Google Fonts, siehe index.html).
@@ -62,7 +66,7 @@ function ladeSchriften() {
   }
 }
 
-const P_DATEN = { x: 24, y: 84, w: 560, h: 576, titel: "" }; // Titel = Szenario-Auswahl (ui.js)
+const P_DATEN = { x: 24, y: 84, w: 560, h: 576, titel: "" }; // Titel = Name des Beispiels
 const P_KURVE = { x: 24, y: 676, w: 560, h: 208, titel: "Lernkurve · Fehlerquote je Epoche" };
 const P_NETZ = { x: 600, y: 84, w: 976, h: 576, titel: "Neuronales Netz" };
 const P_ERKL = { x: 600, y: 676, w: 600, h: 208, titel: "" };
@@ -199,6 +203,10 @@ function draw() {
     push();
     scale(S);
     zeichneKopf();
+    zeichneBeispielLeiste();
+    push();
+    translate(0, LEISTE);
+    zeichneStatus();
     zeichneDatenPanel();
     zeichneKurvenPanel();
     zeichneNetzPanel();
@@ -206,6 +214,7 @@ function draw() {
     zeichneEinstellungen();
     zeichneTooltip();
     zeichneFehlerMeldung();
+    pop();
     pop();
     aktualisiereUi();
   } catch (err) {
@@ -280,9 +289,6 @@ function szenarioWechseln(name) {
   datensatz = erzeugeDatensatz();
   datenAufteilen();
   netzZurueckgesetzt(true);
-  if (ui.szenario) {
-    ui.szenario.selected(szenarioName);
-  }
 }
 
 function setzeModus(m) {
@@ -684,8 +690,9 @@ function mausX() {
   return mouseX / S;
 }
 
+// Mauskoordinate im Inhaltsraster (unterhalb der Beispiel-Leiste)
 function mausY() {
-  return mouseY / S;
+  return mouseY / S - LEISTE;
 }
 
 // Karte im Stil der Schule: weiße Fläche, feine Linie, Titel mit rotem Punkt
@@ -793,8 +800,39 @@ function zeichneKopf() {
   textSize(13);
   fill(...FARBE.blass);
   text(SZ.untertitel, 194, 41);
+}
 
-  // Statuszeile
+// Beispiel-Leiste: hellrot hinterlegt, links „Beispiel“, daneben ein Reiter je
+// Beispiel (HTML-Knöpfe, siehe ui.js). Gleiches Schema in allen PW-Programmen.
+function zeichneBeispielLeiste() {
+  noStroke();
+  fill(253, 240, 242);
+  rect(0, 56, W, LEISTE);
+  stroke(240, 200, 208);
+  strokeWeight(1);
+  line(0, 56 + LEISTE, W, 56 + LEISTE);
+  noStroke();
+  fill(...FARBE.akzent);
+  textFont(TITEL);
+  textStyle(BOLD);
+  textSize(15);
+  textAlign(LEFT, CENTER);
+  text("Beispiel", 26, 56 + LEISTE / 2);
+  textStyle(NORMAL);
+  // kleiner Pfeil zu den Reitern
+  stroke(...FARBE.akzent);
+  strokeWeight(2);
+  const px = 26 + textWidth("Beispiel") + 10;
+  const py = 56 + LEISTE / 2;
+  line(px, py - 5, px + 5, py);
+  line(px + 5, py, px, py + 5);
+  noStroke();
+}
+
+// Statuszeile über den Panels
+function zeichneStatus() {
+  noStroke();
+  textFont(SCHRIFT);
   fill(...FARBE.grau);
   textSize(13);
   textAlign(LEFT, CENTER);
@@ -856,6 +894,7 @@ function berechneKarte() {
 }
 
 function zeichneDatenPanel() {
+  P_DATEN.titel = SZ.name;
   panel(P_DATEN);
 
   // Legende in der Überschrift

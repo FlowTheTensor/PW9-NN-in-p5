@@ -27,7 +27,7 @@ Das Netz:
 
 Die Ausgabe ist die Wahrscheinlichkeit, dass das Teil i.O. ist (Sigmoid-Funktion, Schwelle 0,5).
 
-## Weitere Beispiele (Auswahlliste über dem Diagramm)
+## Weitere Beispiele (Beispiel-Leiste unter der Kopfzeile)
 
 Die Spritzgießmaschine oben ist nur eines von fünf Beispielen. Die anderen stammen aus der Elektronik und Mechatronik und sind an die Stationen einer Industrie-4.0-Modellanlage angelehnt. Beim Start ist der **Förderband-Antrieb** ausgewählt. Alle Daten sind simuliert. Jedes Beispiel hat 110 Messungen, darunter wenige Grenzfälle.
 

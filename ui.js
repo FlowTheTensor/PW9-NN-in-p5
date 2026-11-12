@@ -23,7 +23,9 @@ function layoutUi() {
   huelle.style("width", width + "px");
   huelle.style("font-size", 15 * S + "px");
   for (const p of uiPositionen) {
-    p.el.position(p.x * S, p.y * S);
+    // alles unterhalb der Kopfzeile rutscht um die Beispiel-Leiste nach unten
+    const y = p.y >= 56 && !p.el.hasClass("beispiel") ? p.y + LEISTE : p.y;
+    p.el.position(p.x * S, y * S);
     if (p.w) {
       p.el.style("width", p.w * S + "px");
     }
@@ -42,6 +44,21 @@ function erstelleUi() {
 
   // --- Kopfzeile -------------------------------------------------------------
   ui.logo = platziere(createImg("assets/logo-jps.png", "Logo der Jakob-Preh-Schule"), 14, 3, 122, "logo");
+
+  // Beispiel-Leiste: ein Reiter je Beispiel (Reihenfolge wie in SZENARIEN, daten.js)
+  ui.beispiele = {};
+  let bx = 128;
+  Object.keys(SZENARIEN).forEach((id, i) => {
+    const text = `${i + 1} · ${SZENARIEN[id].kurz}`;
+    const b = 34 + text.length * 8.6;
+    ui.beispiele[id] = platziere(createButton(text), bx, 63, b, "beispiel");
+    ui.beispiele[id].attribute("title", SZENARIEN[id].name + " (das Netz wird zurückgesetzt)");
+    ui.beispiele[id].mousePressed(() => {
+      szenarioWechseln(id);
+      ui.beispiele[id].elt.blur();
+    });
+    bx += b + 10;
+  });
 
   ui.modusErkunden = platziere(createButton("Erkunden & Testen"), 470, 12, 180, "kopf");
   ui.modusErkunden.mousePressed(() => setzeModus("erkunden"));
@@ -69,17 +86,6 @@ function erstelleUi() {
   ui.datei.hide();
 
   // --- Prozessdaten ----------------------------------------------------------
-  // Auswahl des Beispiels – steht als Überschrift über dem Diagramm
-  ui.szenario = platziere(createSelect(), 36, 88, 380, "szenario");
-  for (const name in SZENARIEN) {
-    ui.szenario.option(SZENARIEN[name].name, name);
-  }
-  ui.szenario.selected(szenarioName);
-  ui.szenario.changed(() => {
-    szenarioWechseln(ui.szenario.value());
-    ui.szenario.elt.blur();
-  });
-
   ui.aufteilen = platziere(createButton("Daten neu aufteilen"), 40, 620, 230);
   ui.aufteilen.mousePressed(() => {
     datenAufteilen();
@@ -270,7 +276,13 @@ function aktualisiereUi() {
 
   beschrifte(ui.karte, karteAn ? "Entscheidungskarte ausblenden" : "Entscheidungskarte einblenden");
 
-  for (const el of [ui.szenario, ui.anzahl, ui.zufall, ui.tutorial, ui.laden, ui.aufteilen, ui.modusErkunden, ui.modusTraining]) {
+  for (const id of Object.keys(ui.beispiele)) {
+    klasse(ui.beispiele[id], "aktiv", id === szenarioName);
+    sperre(ui.beispiele[id], beschaeftigt && id !== szenarioName);
+    ui.beispiele[id].attribute("aria-pressed", id === szenarioName ? "true" : "false");
+  }
+
+  for (const el of [ui.anzahl, ui.zufall, ui.tutorial, ui.laden, ui.aufteilen, ui.modusErkunden, ui.modusTraining]) {
     sperre(el, beschaeftigt);
   }
 }

@@ -126,21 +126,6 @@ select.ui {
   cursor: pointer;
 }
 
-/* Beispiel-Auswahl als Überschrift des Datenpanels */
-select.ui.szenario {
-  height: 1.75em;
-  font-family: Quicksand, Arial, Helvetica, sans-serif;
-  font-size: 1.05em;
-  font-weight: 700;
-  border-color: var(--line);
-  background: var(--bg);
-}
-
-select.ui.szenario:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
 .ui input[type="checkbox"] {
   width: 1.05em;
   height: 1.05em;
@@ -165,4 +150,30 @@ span.ui {
   line-height: 1.9em;
   color: var(--ink-soft);
   cursor: default;
+}
+
+/* ---------------------------------------------------------------- */
+/* Beispiel-Leiste unter der Kopfzeile (gleiches Schema in allen PW) */
+/* ---------------------------------------------------------------- */
+button.ui.beispiel {
+  height: 2.15em;
+  padding: 0 1em;
+  border: 1.5px solid var(--accent);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+button.ui.beispiel:hover:not(:disabled) {
+  background: #fbe1e6;
+  border-color: var(--accent);
+}
+
+button.ui.beispiel.aktiv,
+button.ui.beispiel.aktiv:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(200, 30, 58, 0.3);
 }

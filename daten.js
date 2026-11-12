@@ -38,6 +38,7 @@ function wortformen(einzahl, mehrzahl, weiblich) {
 const SZENARIEN = {
   // ---------------------------------------------------------------------------
   foerderband: {
+    kurz: "Förderband", // Beschriftung des Reiters in der Beispiel-Leiste
     name: "Förderband-Antrieb · Zustandsüberwachung",
     untertitel: "Zustandsüberwachung · Neuronales Netz",
     wort: wortformen("Messung", "Messungen", true),
@@ -70,6 +71,7 @@ const SZENARIEN = {
 
   // ---------------------------------------------------------------------------
   spritzguss: {
+    kurz: "Spritzguss", // Beschriftung des Reiters in der Beispiel-Leiste
     name: "Spritzgießmaschine · Qualitätsprüfung",
     untertitel: "Spritzguss · Neuronales Netz",
     wort: wortformen("Teil", "Teile", false),
@@ -103,6 +105,7 @@ const SZENARIEN = {
 
   // ---------------------------------------------------------------------------
   pneumatik: {
+    kurz: "Pneumatik", // Beschriftung des Reiters in der Beispiel-Leiste
     name: "Pneumatikzylinder · Fehlerdiagnose",
     untertitel: "Pneumatik · Neuronales Netz",
     wort: wortformen("Messung", "Messungen", true),
@@ -138,6 +141,7 @@ const SZENARIEN = {
 
   // ---------------------------------------------------------------------------
   reflow: {
+    kurz: "Reflow-Löten", // Beschriftung des Reiters in der Beispiel-Leiste
     name: "Reflow-Lötofen · Lötstellenprüfung",
     untertitel: "Reflow-Löten · Neuronales Netz",
     wort: wortformen("Platine", "Platinen", true),
@@ -175,6 +179,7 @@ const SZENARIEN = {
 
   // ---------------------------------------------------------------------------
   greifer: {
+    kurz: "Greifer", // Beschriftung des Reiters in der Beispiel-Leiste
     name: "Handhabung · Ablagegenauigkeit Greifer",
     untertitel: "Greifer-Positionierung · Neuronales Netz",
     wort: wortformen("Ablage", "Ablagen", true),
